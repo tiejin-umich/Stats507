@@ -26,7 +26,9 @@ import matplotlib.pyplot as plt
 import os
 from itertools import combinations
 
-# Now we fit the model with the following code. we find that even we do not need to manupulate data to categorical since the ```OLS``` function will treat it as categorical automatically
+# Now we fit the model with the following code.
+# we find that even we do not need to manupulate data to categorical
+# since the ```OLS``` function will treat it as categorical automatically
 
 file = 'tooth_growth.feather'
 if os.path.exists(file):
@@ -45,9 +47,17 @@ model3 = sm.OLS.from_formula('len~dose*supp_VC',data=data).fit()
 print(model1.summary())
 print(model3.summary())
 
-# We have the formula to calculate $R^2: R^2 = 1-\frac{\sum_{i=1}^n(Y_i - \hat{Y_i})^2}{\sum_{i=1}^n (Y_i - \bar{Y_i})^2}=1-\frac{RSS}{TSS}$. And we will use this formula to calculate. And the formula of $Adjust R^2$ is $1-\frac{(1-R^2)(N-1)}{N-p-1}$ where $N$ is the sample size and $p$ is the number of variables.
+# We have the formula to calculate $R^2:
+# R^2 = 1-\frac{\sum_{i=1}^n(Y_i - \hat{Y_i})^2}{\sum_{i=1}^n (Y_i - \bar{Y_i})^2}
+# =1-\frac{RSS}{TSS}$. And we will use this formula to calculate.
+# And the formula of $Adjust R^2$ is $1-\frac{(1-R^2)(N-1)}{N-p-1}$
+# where $N$ is the sample size and $p$ is the number of variables.
 #
-# We use 2 different ways wo get $TSS$ in formula. First, when we do not have any variables, the result of linear model is the $\bar{Y_i}$. Hence the $TSS$ is the $RSS$ of model without any variable. Also, we can use the properites from the model to get $TSS$ directly. We use both method to get the same result.
+# We use 2 different ways wo get $TSS$ in formula.
+# First, when we do not have any variables, the result of linear model is the $\bar{Y_i}$.
+# Hence the $TSS$ is the $RSS$ of model without any variable.
+# Also, we can use the properites
+# from the model to get $TSS$ directly. We use both method to get the same result.
 
 ssr1 = model1.ssr
 ssr2 = model2.ssr
@@ -58,7 +68,9 @@ Adjust_R21 = 1-(59/54)*(1-R21)
 Adjust_R22 = 1-(59/54)*(1-R22)
 print(Adjust_R21,Adjust_R22)
 
-# We can see that we get the same result as the $R-squared$ And $Adj. R-squared$  which is 0.794 and 0.775 in the summary of model1 and model3. Also, we use the following code to calculate $RSS$ by ourselves to get the same answer.
+# We can see that we get the same result as the $R-squared$ And $Adj. R-squared$
+# which is 0.794 and 0.775 in the summary of model1 and model3.
+# Also, we use the following code to calculate $RSS$ by ourselves to get the same answer.
 
 y_hat = model1.fittedvalues
 residual1 = y_hat-tg_data['len']
@@ -72,19 +84,25 @@ print(R23,Adjust_R23)
 
 # ### Question 1
 # #### Part A
-# In this part, we will use ```OHX01TC``` as our target variable. First, we need to prepare the data.
+# In this part, we will use ```OHX01TC``` as our target variable.
+# First, we need to prepare the data.
 
 data1 = pd.read_pickle('oral health dentition data.pickle')
 data2 = pd.read_pickle('demographic data.pickle')
 data = pd.merge(data1['Tooth_Count_01'],data2,how='left',on = 'UniqueID')
 
 
-# We cannot deal with the missing value in target variable. Hence we drop these data and let ```OHX01TC``` be a binary Y in order to use logitstic regression.
+# We cannot deal with the missing value in target variable.
+# Hence we drop these data and let ```OHX01TC``` be a binary Y
+# in order to use logitstic regression.
 
 data.dropna(inplace=True,subset=['Tooth_Count_01'])
 data['TC01'] = data['Tooth_Count_01'].apply(lambda x: 1 if x== 2 else 0)
 
-# Now our analysis will only focus on whose ```age``` is greater than 12. And in B-spline part, we will only use knots with age no less than 14.Also we fill all the ```NAN``` value to a new categorical ```missing values```. E.g we think missing values is also a value of variable.
+# Now our analysis will only focus on whose ```age``` is greater than 12.
+# And in B-spline part, we will only use knots with age no less than 14.
+# Also we fill all the ```NAN``` value to a new categorical ```missing values```.
+# E.g we think missing values is also a value of variable.
 
 data = data[data['age']>=12]
 age = data['age'].unique()
@@ -96,9 +114,17 @@ data['marital_status']=data['marital_status'].cat.add_categories('missing values
 data['education'] = data['education'].fillna('missing values')
 data['marital_status'] = data['marital_status'].fillna('missing values')
 
-# And our analysis will only focos on the knots selection with ```degree = 3```. We can know that we need to have 4 knots in total.
+# And our analysis will only focos on the knots selection
+# with ```degree = 3```. We can know that we need to have 4 knots in total.
 #
-# if we traverse all the subsets of 4 knots, we need to fit 67 choose 4 model. In my pc, it will take more than 15 hours to pick the model with minimal aic. Hence, Here, we use an idea similar to Coordinate descent. That is to say, we will pick knots one by one. And when we pick the first knot, we will traverse all the subsets of 1 knots to get the best model with 1 knot. And when we pick the second knot, we will traverse all the subsets of 2 knot containing the first knot. And for the third,fourth knot, we have the same idea.
+# if we traverse all the subsets of 4 knots, we need to fit 67 choose 4 model.
+# In my pc, it will take more than 15 hours to pick the model with minimal aic.
+# Hence, Here, we use an idea similar to Coordinate descent.
+# That is to say, we will pick knots one by one.
+# And when we pick the first knot, we will traverse all the subsets of 1 knots
+# to get the best model with 1 knot. And when we pick the second knot,
+# we will traverse all the subsets of 2 knot containing the first knot.
+# And for the third,fourth knot, we have the same idea.
 
 result = []
 while len(result) < 4:
@@ -117,12 +143,14 @@ while len(result) < 4:
     result.append(temp_result)
     total_age.remove(temp_result)
 
-# And we get the result, the best 4 knots we find is ```[25,79,78,77]``` with the minimal aic is 23188.868 
+# And we get the result, the best 4 knots we find is ```[25,79,78,77]``` with
+# the minimal aic is 23188.868
 
 print(min_aic)
 print(result)
 
-# Now we consider how to add demograhic data into the model. First we prepare the data with possible variables to add.
+# Now we consider how to add demographic data into the model.
+# First we prepare the data with possible variables to add.
 
 all_col = list(data.columns)
 delete_col = ['Tooth_Count_01','age','MEC weight','Interview weight','TC01']
@@ -130,10 +158,29 @@ for col in delete_col:
     all_col.remove(col)
 all_col
 
-# With only 8 possible variables, we can traverse all the subsets of variables to get the model with minimal aic. Here, we define a function ```choose_best_sub``` to get the best subsets and minimal aic.
+# With only 8 possible variables,
+# we can traverse all the subsets of variables to get the model with minimal aic.
+# Here, we define a function ```choose_best_sub```
+# to get the best subsets and minimal aic.
 
 formula_str = 'TC01~bs(age,knots=np.array(result)){}'
 def choose_best_sub(col_list,data,min_aic_init=1000000):
+    """
+    a function to choose the best subset feature for
+    demographic data according to aic.
+    :param col_list:  type list;
+    store all the column names  we might add
+    :param data:
+    the data we use. Here is type pd.DataFrame
+    :param min_aic_init: type float(or int);
+    the minimal aic we set at first. the default set is 1000000
+    :return:
+    a tuple.
+    First element is the list of best subset to add;
+    Second element is the minimal aic with best subset;
+    Third element is the best formula we use in smf package.
+    
+    """
     length = len(col_list)
     result_col = []
     best_formula = ""
@@ -155,7 +202,9 @@ def choose_best_sub(col_list,data,min_aic_init=1000000):
     return result_col,min_aic_init,best_formula
 res_demo = choose_best_sub(all_col,data)
 
-# We get the result that the model should contains ```gender```,```race```,```education```,```cohort``` as variables besides b-spline of age. And the minimal aic is 22121.8897.
+# We get the result that the model should contains
+# ```gender```,```race```,```education```,```cohort``` as variables
+# besides b-spline of age. And the minimal aic is 22121.8897.
 
 print(res_demo)
 
@@ -205,7 +254,8 @@ for age_num in age_list:
     i += 1
 
 
-# Then we transform the data to DataFrame. And to plot the line figure, we need to sort our x which is ```age```.
+# Then we transform the data to DataFrame.
+# And to plot the line figure, we need to sort our x which is ```age```.
 
 age_res = pd.DataFrame(age_res).T
 age_res.sort_values('age',inplace=True)
@@ -230,7 +280,9 @@ for i in range(len(total_tc)):
         plt.title(pos_name[int(i/8)])
 fig.tight_layout()
 
-# **Figure 1**: predicted probability that a permanent tooth is present varies with age for each tooth with Universal Numbering System
+# **Figure 1**: predicted probability that
+# a permanent tooth is present varies with age for each tooth
+# with Universal Numbering System
 
 # ### Question 2
 
@@ -239,7 +291,9 @@ fig.tight_layout()
 data_qs2 = data_32tc[['Tooth_Count_01','Tooth_Count_01_probability']]
 data_qs2.sort_values('Tooth_Count_01_probability',inplace=True)
 
-# As we spilt the data into 10 groups uniformly, we calculate the bserved proportion of cases with a permanent tooth and expected proportion, and store them in two lists ```obs_result``` and ```expected_result```.
+# As we spilt the data into 10 groups uniformly,
+# we calculate the bserved proportion of cases with a permanent tooth and expected proportion,
+# and store them in two lists ```obs_result``` and ```expected_result```.
 
 ten_percent = int(25311/10)
 obs_result = []
@@ -254,7 +308,8 @@ for i in range(10):
     obs_result.append(obs)
     expected_result.append(expected)
 
-# And we draw the scatter plot comparing the observed and expected probabilities with a line through the origin with slope 1
+# And we draw the scatter plot comparing the observed
+# and expected probabilities with a line through the origin with slope 1
 
 plt.scatter(obs_result,expected_result)
 plt.xlabel('observed proportion ')
@@ -262,6 +317,9 @@ plt.ylabel('expected proportion')
 plt.plot([0,0.5],[0,0.5])
 plt.show()
 
-# We can see the points in the plot are very close to the line. Although there are some points are not on the line, Only a few points have little distance to the line. Hence we think our model can been said well-calibrated.
+# We can see the points in the plot are very close to the line.
+# Although there are some points are not on the line,
+# Only a few points have little distance to the line.
+# Hence we think our model can been said well-calibrated.
 
 
