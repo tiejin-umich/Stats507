@@ -30,7 +30,7 @@
 # Write your name in *bold* on your title slide.
 
 # ## Pandas Topic- Windows operations.
-# Tiejin Chen; tiejin@umich.edu
+# *Tiejin Chen*; **tiejin@umich.edu**
 # Here we choose windows operations(```rolling```) as our topic.
 # First, we import all the module we need
 #
